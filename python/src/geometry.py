@@ -1,9 +1,14 @@
 import cv2
 import numpy as np
 
-def get_warped_plate( img, kpts):
+def get_warped_plate(img, kpts):
     src_pts = order_points(kpts)
-    width, height = 440, 110
+    
+    # Ratio plaque standard européenne ~4:1 ou 5:1
+    # Pour utiliser les 320px de largeur PP-OCRv4 : 320/48 = 6.66 ratio max
+    
+    width, height = 480, 96
+    
     dst_pts = np.array([[0, 0], 
                         [width-1, 0], 
                         [width-1, height-1], 

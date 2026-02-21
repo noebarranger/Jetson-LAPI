@@ -9,8 +9,9 @@ from .core import init_inference_engines
 
 from .pipeline import create_lapi_pipeline
 from .geometry import get_warped_plate
-from .viz import draw_hud
-from .filters import create_stabilizer
+from .viz import draw_tracks
+from .datastruct import Detection, PlateDetection, KalmanState, TrackSnapshot
+
 __all__ = [
     'get_video_stream',
     'get_image_stream',
@@ -19,6 +20,9 @@ __all__ = [
     'init_inference_engines',
     'create_lapi_pipeline',
     'get_warped_plate',
-    'draw_hud',
-    'create_stabilizer',
+    'draw_tracks',
+    'Detection', 
+    'PlateDetection', 
+    'KalmanState', 
+    'TrackSnapshot',
 ]
