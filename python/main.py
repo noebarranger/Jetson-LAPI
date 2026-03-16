@@ -20,8 +20,8 @@ def main():
     OCR_DICT = "../models/en_dict.txt"
 
     
-    INPUT_PATH = "../exemples/inputs/6.mp4"
-    OUTPUT_PATH = "../exemples/outputs/6.mp4"
+    INPUT_PATH = "../exemples/inputs/2.mp4"
+    OUTPUT_PATH = "../exemples/outputs/2.mp4"
     
     is_video = INPUT_PATH.lower().endswith(('.mp4', '.avi', '.mov'))
 
@@ -42,7 +42,6 @@ def main():
 
             tracks = pipeline(frame)
             
-            # ← DEBUG
             print(f"[Main] Type tracks: {type(tracks)}, len: {len(tracks)}")
             if tracks:
                 print(f"[Main] Premier track: ID={tracks[0].id}, "
@@ -51,7 +50,6 @@ def main():
             
             res_img = draw_tracks(frame, tracks)
             
-            # ← DEBUG
             print(f"[Main] Type res_img: {type(res_img)}, "
                 f"shape: {res_img.shape if hasattr(res_img, 'shape') else 'N/A'}")    
             
