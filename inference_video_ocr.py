@@ -235,8 +235,7 @@ def clean_plate(text):
         match = re.search(pattern, text)
         if match:
             return match.group(0)
-
-    return ""
+    return text
 
 
 # ════════════════════════════════════════════════════════════════════════════════
