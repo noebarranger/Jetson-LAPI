@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install --no-cache-dir \
     "numpy<2" \
     onnxruntime-gpu==1.16.3 \
-    opencv-python-headless
-
+    opencv-python-headless \
+    filterpy
 WORKDIR /app
 COPY . .

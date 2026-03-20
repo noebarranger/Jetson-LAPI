@@ -3,7 +3,17 @@ import re
 import cv2
 import numpy as np
 import onnxruntime as ort
+from src.config import CHARS_PATH
 
+def load_ocr(path, providers):
+    ocr_sess       = ort.InferenceSession(path, providers=providers)
+    with open(CHARS_PATH, 'r', encoding='utf-8') as f:
+        chars = [''] + [c.strip() for c in f.readlines() if c.strip()]
+    print(f"OCR   : {ocr_sess.get_providers()}, {len(chars)} chars")
+    return {
+        "sess":       ocr_sess,
+        "chars":      chars
+    }
 
 
 def load_ocr(path, chars_path, providers):
@@ -49,7 +59,7 @@ def decode_ocr(preds, chars):
     return text
 
 
-def run_ocr(ocr_sess, plate_img):
+def run_ocr(ocr, plate_img):
     if plate_img is None or plate_img.size == 0:
         return ""
     imgC, imgH, imgW = 3, 48, 320
@@ -69,22 +79,7 @@ def run_ocr(ocr_sess, plate_img):
         img    = (img.astype('float32') / 255.0 - 0.5) / 0.5
         tensor = np.zeros((imgC, imgH, imgW), dtype=np.float32)
         tensor[:, :, 0:resized_w] = img.transpose((2, 0, 1))
-        preds  = ocr_sess.run(None, {ocr_sess.get_inputs()[0].name: tensor[np.newaxis]})[0]
-        results.append(decode_ocr(preds))
+        preds  = ocr["sess"].run(None, {ocr["sess"].get_inputs()[0].name: tensor[np.newaxis]})[0]
+        results.append(decode_ocr(preds, ocr["chars"]))
 
     return max(results, key=len)
-
-def clean_plate(text):
-    text  = text.upper()
-
-    patterns = [
-        r'[A-Z]{3}\s?\d{3}',    # ABC 123
-        r'\d{3}\s?[A-Z]{3}',    # 123 ABC
-        r'[A-Z]\d{2}\s?[A-Z]{3}',  # A12 BCD
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, text)
-        if match:
-            return match.group(0)
-    return text

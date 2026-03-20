@@ -5,9 +5,9 @@ import numpy as np
 def draw(frame, detections, frame_count):
     out = frame.copy()
     for det in detections:
-        color = COLORS[LABELS.index(det["class"])]
+        color = COLORS[0]
         x1, y1, x2, y2 = det["box"]
-        label = f"{det['class']} {det['score']}  {det.get('text', '')}"
+        label = f" {det['score']}  {det.get('text', '')}"
 
         overlay = out.copy()
         overlay[y1:y2, x1:x2][det["mask"] == 1] = color

@@ -2,8 +2,10 @@
 import cv2
 import numpy as np
 from ..models.yolo import run_yolo, parse_yolo
-from ..config import CONF, IOU, SMOOTHING
+from ..models.ocr import run_ocr
 
+from ..config import CONF, IOU, SMOOTHING
+from .detect import warp_plate, clean_plate
 
 # ════════════════════════════════════════════════════════════════════════════════
 # STATE
@@ -15,7 +17,6 @@ def make_initial_state():
         "trajectory": [],
         "smoothing":  SMOOTHING,
     }
-
 
 # ════════════════════════════════════════════════════════════════════════════════
 # STABILISATION
@@ -61,7 +62,7 @@ def stabilize(frame, state):
 # PIPELINE
 # ════════════════════════════════════════════════════════════════════════════════
 
-def run_pipeline(frame, state, yolo):
+def run_pipeline(frame, state, yolo, ocr):
     """
     (frame, state, yolo) → (frame_stabilisée, détections, new_state)
     """
@@ -69,5 +70,13 @@ def run_pipeline(frame, state, yolo):
 
     outputs    = run_yolo(yolo["sess"], frame, yolo["input_w"], yolo["input_h"], yolo["input_name"])
     detections = parse_yolo(outputs, frame.shape[0], frame.shape[1], yolo["input_h"], yolo["input_w"], yolo["num_masks"])
+
+
+    for det in detections:
+        plate     = warp_plate(frame, det["polygon"]) if len(det["polygon"]) == 4 \
+                    else frame[det["box"][1]:det["box"][3], det["box"][0]:det["box"][2]]
+        
+        ocr_raw_output =run_ocr(ocr, plate)
+        det['text'] = clean_plate(ocr_raw_output)
 
     return frame, detections, new_state
