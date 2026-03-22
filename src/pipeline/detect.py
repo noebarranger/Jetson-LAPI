@@ -26,4 +26,4 @@ def clean_plate(text):
         m = re.search(pattern, text)
         if m:
             return m.group(0)
-    return ""
+    return text

@@ -1,6 +1,35 @@
 
 
 import cv2
+import json
+import os
+def frames_from_dataset(images_dir, annotations_path):
+    """
+    Générateur qui yield (frame, ground_truth) pour chaque image annotée.
+ 
+    ground_truth = {
+        "image_name": "frame_07424.jpg",
+        "polygon":    [[x,y], ...],
+        "plate_id":   "K81VRC",
+    }
+    """
+    with open(annotations_path, "r") as f:
+        annotations = json.load(f)
+ 
+    for ann in annotations:
+        filename = os.path.basename(ann["image_name"])
+        path     = os.path.join(images_dir, filename)
+ 
+        frame = cv2.imread(path)
+        if frame is None:
+            print(f"image manquante : {path}")
+            continue
+ 
+        yield frame, {
+            "image_name": filename,
+            "polygon":    ann["polygon"],
+            "plate_id":   ann["plate_id"],
+        }
 
 def frames_from_image(path):
     frame = cv2.imread(path)

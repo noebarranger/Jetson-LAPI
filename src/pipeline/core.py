@@ -66,12 +66,12 @@ def run_pipeline(frame, state, yolo, ocr):
     """
     (frame, state, yolo) → (frame_stabilisée, détections, new_state)
     """
-    frame, new_state = stabilize(frame, state)
 
     outputs    = run_yolo(yolo["sess"], frame, yolo["input_w"], yolo["input_h"], yolo["input_name"])
     detections = parse_yolo(outputs, frame.shape[0], frame.shape[1], yolo["input_h"], yolo["input_w"], yolo["num_masks"])
 
-
+    # KALMAN ICI
+    
     for det in detections:
         plate     = warp_plate(frame, det["polygon"]) if len(det["polygon"]) == 4 \
                     else frame[det["box"][1]:det["box"][3], det["box"][0]:det["box"][2]]
@@ -79,4 +79,4 @@ def run_pipeline(frame, state, yolo, ocr):
         ocr_raw_output =run_ocr(ocr, plate)
         det['text'] = clean_plate(ocr_raw_output)
 
-    return frame, detections, new_state
+    return frame, detections, state
