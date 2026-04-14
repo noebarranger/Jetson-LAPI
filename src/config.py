@@ -29,4 +29,18 @@ IOU       = 0.5
 SMOOTHING = 100
 LABELS    = ["day", "night"]
 COLORS    = [(0, 255, 0), (0, 0, 255)]
-PROVIDERS = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+
+# ── Providers optimisés pour Jetson ────────────────────────────────────────────
+# Essaie TensorRT en priorité (plus rapide sur Jetson), puis CUDA, puis CPU
+try:
+    import onnxruntime as ort
+    available_providers = ort.get_available_providers()
+    
+    if "TensorrtExecutionProvider" in available_providers:
+        PROVIDERS = ["TensorrtExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+    elif "CUDAExecutionProvider" in available_providers:
+        PROVIDERS = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    else:
+        PROVIDERS = ["CPUExecutionProvider"]
+except:
+    PROVIDERS = ["CUDAExecutionProvider", "CPUExecutionProvider"]
