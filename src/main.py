@@ -55,10 +55,15 @@ for frame, ground_truth in source:
 
     metrics = update_metrics(metrics, gt, best)
     
-    # ── Affichage des métriques ──
+    # ── Affichage détaillé de chaque étape ──
+    stab_ms = times["stabilization"] * 1000
+    yolo_ms = times["yolo_inference"] * 1000
+    kalk_ms = times["kalman_postproc"] * 1000
+    ocr_ms  = times["ocr"] * 1000
+    
     avg_fps = frame_count / total_time if total_time > 0 else 0
     status = "✓" if best == gt else "✗"
-    print(f"[{status}] {frame_count:3d} | {elapsed:.3f}s | FPS: {fps:.1f} | Avg: {avg_fps:.1f} fps | GT={gt} | DET={best}")
+    print(f"[{status}] {frame_count:3d} | Stab:{stab_ms:5.1f}ms | YOLO:{yolo_ms:5.1f}ms | Kalm:{kalk_ms:5.1f}ms | OCR:{ocr_ms:5.1f}ms | Avg:{avg_fps:.1f}fps | GT={gt} | DET={best}")
     
     if best != gt:
         annotated = draw(frame, detections, frame_count)
@@ -69,8 +74,8 @@ for frame, ground_truth in source:
         cv2.imwrite(os.path.join(ERRORS_DIR, filename), annotated)
 
 print("\n" + "="*60)
-print(f"✅ Traitement terminé: {frame_count} images en {total_time:.1f}s")
-print(f"📊 FPS moyen: {frame_count/total_time if total_time > 0 else 0:.1f} fps")
+print(f"Traitement terminé: {frame_count} images en {total_time:.1f}s")
+print(f"FPS moyen: {frame_count/total_time if total_time > 0 else 0:.1f} fps")
 print("="*60)
 print_summary(metrics)
 

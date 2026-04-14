@@ -44,15 +44,20 @@ for frame in source:
     write_frame(writer, annotated)
     texts = [d.get("text", "") for d in detections if d.get("text")]
     
-    # ── Affichage des métriques ──
+    # ── Affichage détaillé de chaque étape ──
+    stab_ms = times["stabilization"] * 1000
+    yolo_ms = times["yolo_inference"] * 1000
+    kalk_ms = times["kalman_postproc"] * 1000
+    ocr_ms  = times["ocr"] * 1000
+    
     avg_fps = frame_count / total_time if total_time > 0 else 0
-    print(f"[{frame_count:3d}/{total_frames}] {elapsed:.3f}s | FPS: {fps:.1f} | Avg: {avg_fps:.1f} fps | {texts}")
+    print(f"[{frame_count:3d}/{total_frames}] {elapsed:.3f}s | Stab:{stab_ms:5.1f}ms | YOLO:{yolo_ms:5.1f}ms | Kalm:{kalk_ms:5.1f}ms | OCR:{ocr_ms:5.1f}ms | Avg:{avg_fps:.1f}fps | {texts}")
 
 
 close_video_writer(writer)
 avg_fps = frame_count / total_time if total_time > 0 else 0
-print(f"\n✅ Terminé! {frame_count} frames en {total_time:.1f}s → {VIDEO_OUTPUT}")
-print(f"📊 FPS moyen: {avg_fps:.1f} fps")
+print(f"\n Terminé! {frame_count} frames en {total_time:.1f}s → {VIDEO_OUTPUT}")
+print(f" FPS moyen: {avg_fps:.1f} fps")
 
 # ── Affichage du benchmark détaillé ────────────────────────────────────────
 print_pipeline_metrics(benchmark)
