@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from ..models.yolo import run_yolo, parse_yolo
 from ..models.ocr import run_ocr
-
+from .kalman import make_kalman_quad, kalman_update_quad
 from ..config import CONF, IOU, SMOOTHING
 from .detect import warp_plate, clean_plate
 
@@ -16,8 +16,10 @@ def make_initial_state():
         "prev_gray":  None,
         "trajectory": [],
         "smoothing":  SMOOTHING,
+        "kalman":     None,   # KalmanFilter 16x8
+        "missed":     0,
+        "max_missed": 10,
     }
-
 # ════════════════════════════════════════════════════════════════════════════════
 # STABILISATION
 # ════════════════════════════════════════════════════════════════════════════════
@@ -61,22 +63,38 @@ def stabilize(frame, state):
 # ════════════════════════════════════════════════════════════════════════════════
 # PIPELINE
 # ════════════════════════════════════════════════════════════════════════════════
-
 def run_pipeline(frame, state, yolo, ocr):
-    """
-    (frame, state, yolo) → (frame_stabilisée, détections, new_state)
-    """
+    # ── 1. Stabilisation ─────────────────────────────────────────────────────
+    frame, new_state = stabilize(frame, state)
 
+    # ── 2. Détection YOLO ────────────────────────────────────────────────────
     outputs    = run_yolo(yolo["sess"], frame, yolo["input_w"], yolo["input_h"], yolo["input_name"])
-    detections = parse_yolo(outputs, frame.shape[0], frame.shape[1], yolo["input_h"], yolo["input_w"], yolo["num_masks"])
+    detections = parse_yolo(outputs, frame.shape[0], frame.shape[1],
+                            yolo["input_h"], yolo["input_w"], yolo["num_masks"])
 
-    # KALMAN ICI
-    
+    # ── 3. Kalman ────────────────────────────────────────────────────────────
+    if len(detections) > 0:
+        poly = detections[0]["polygon"]
+        kf   = new_state["kalman"] if new_state["kalman"] is not None \
+               else make_kalman_quad(poly)
+
+        kf.predict()                              # ← MANQUAIT
+        smoothed_poly = kalman_update_quad(kf, poly)
+        detections[0]["polygon"] = smoothed_poly
+        new_state = {**new_state, "kalman": kf, "missed": 0}
+
+    else:
+        missed = new_state["missed"] + 1
+        if new_state["kalman"] is not None and missed <= new_state["max_missed"]:
+            new_state["kalman"].predict()         # ← prédit même sans détection
+        else:
+            new_state = {**new_state, "kalman": None}
+        new_state = {**new_state, "missed": missed}
+
+    # ── 4. OCR ───────────────────────────────────────────────────────────────
     for det in detections:
-        plate     = warp_plate(frame, det["polygon"]) if len(det["polygon"]) == 4 \
-                    else frame[det["box"][1]:det["box"][3], det["box"][0]:det["box"][2]]
-        
-        ocr_raw_output =run_ocr(ocr, plate)
-        det['text'] = clean_plate(ocr_raw_output)
+        plate         = warp_plate(frame, det["polygon"]) if len(det["polygon"]) == 4 \
+                        else frame[det["box"][1]:det["box"][3], det["box"][0]:det["box"][2]]
+        det["text"]   = clean_plate(run_ocr(ocr, plate))
 
-    return frame, detections, state
+    return frame, detections, new_state
