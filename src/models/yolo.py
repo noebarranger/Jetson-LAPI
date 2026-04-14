@@ -74,6 +74,15 @@ def _extract_detections(boxes, scores, class_ids, mask_preds, proto, img_h, img_
             continue
 
         poly = poly.reshape(-1, 2) + np.array([x1, y1])
+        
+        # ── Force le polygon à avoir exactement 4 points (pour Kalman) ──
+        if len(poly) < 4:
+            # Complète avec la boîte englobante si < 4 points
+            rect = cv2.minAreaRect(poly.astype(np.int32))
+            poly = cv2.boxPoints(rect)
+        elif len(poly) > 4:
+            # Garde les 4 premiers points du convexe
+            poly = poly[:4]
 
         detections.append({
             "class":   LABELS[int(class_ids[i])],
